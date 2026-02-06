@@ -159,4 +159,27 @@ cmd_project() {
   if is_int "$input"; then
     get_project_by_id "$input"
   elif [[ "$input" == */* ]]; then
-    # Treat as fu
+    # Treat as fufull path-with-namespace
+    get_project_by_path "$input"
+  else
+    search_projects "$input"
+  fi
+}
+
+main() {
+  local cmd="${1:-}"; shift || true
+  case "$cmd" in
+    group)   cmd_group "${1:-}" ;;
+    user)    cmd_user "${1:-}" ;;
+    project) cmd_project "${1:-}" ;;
+    -h|--help|help|"") usage ;;
+    *)
+      echo "Unknown command: $cmd" >&2
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
+
