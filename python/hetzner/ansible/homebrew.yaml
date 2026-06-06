@@ -1,0 +1,66 @@
+---
+- name: Install Homebrew on Ubuntu
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+
+  vars:
+    brew_user: tux
+    brew_home: "/home/tux"
+
+  tasks:
+    - name: Install Homebrew prerequisites
+      apt:
+        name:
+          - build-essential
+          - procps
+          - curl
+          - file
+          - git
+        state: present
+        update_cache: true
+
+    - name: Check if Homebrew is already installed
+      stat:
+        path: /home/linuxbrew/.linuxbrew/bin/brew
+      register: brew_installed
+
+    - name: Install Homebrew
+      become: true
+      become_user: "{{ brew_user }}"
+      shell: |
+        NONINTERACTIVE=1 \
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      args:
+        creates: /home/linuxbrew/.linuxbrew/bin/brew
+      when: not brew_installed.stat.exists
+
+    - name: Add Homebrew to .bashrc
+      lineinfile:
+        path: "{{ brew_home }}/.bashrc"
+        line: 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
+        create: true
+      become: true
+      become_user: "{{ brew_user }}"
+
+    - name: Add Homebrew to .profile
+      lineinfile:
+        path: "{{ brew_home }}/.profile"
+        line: 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
+        create: true
+      become: true
+      become_user: "{{ brew_user }}"
+
+    - name: Verify Homebrew installation
+      become: true
+      become_user: "{{ brew_user }}"
+      shell: |
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        brew --version
+      register: brew_version
+      changed_when: false
+
+    - name: Display Homebrew version
+      debug:
+        var: brew_version.stdout_lines

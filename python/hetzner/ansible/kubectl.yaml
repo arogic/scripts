@@ -1,0 +1,51 @@
+---
+- name: Install kubectl locally on Ubuntu
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install prerequisites
+      apt:
+        name:
+          - curl
+          - gpg
+          - apt-transport-https
+        state: present
+        update_cache: true
+
+    - name: Create apt keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download Kubernetes signing key
+      shell: |
+        set -e
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key \
+          | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add Kubernetes apt repository
+      copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /
+
+    - name: Install kubectl
+      apt:
+        name: kubectl
+        state: present
+        update_cache: true
+
+    - name: Verify kubectl installation
+      command: kubectl version --client
+      register: kubectl_version
+      changed_when: false
+
+    - name: Display kubectl version
+      debug:
+        var: kubectl_version.stdout_lines

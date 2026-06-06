@@ -1,0 +1,67 @@
+---
+- name: Install kubectl krew locally
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: true
+
+  vars:
+    krew_root: "{{ ansible_env.HOME }}/.krew"
+
+  tasks:
+    - name: Install prerequisites
+      become: true
+      apt:
+        name:
+          - git
+          - curl
+          - wget
+          - tar
+          - gzip
+        state: present
+        update_cache: true
+
+    - name: Determine architecture
+      set_fact:
+        krew_arch: amd64
+      when: ansible_architecture in ['x86_64', 'amd64']
+
+    - name: Determine operating system
+      set_fact:
+        krew_os: linux
+
+    - name: Create temporary directory
+      tempfile:
+        state: directory
+        suffix: krew
+      register: krew_tmp
+
+    - name: Download krew
+      unarchive:
+        src: "https://github.com/kubernetes-sigs/krew/releases/latest/download/krew-{{ krew_os }}_{{ krew_arch }}.tar.gz"
+        dest: "{{ krew_tmp.path }}"
+        remote_src: true
+
+    - name: Install krew
+      command:
+        cmd: "./krew-{{ krew_os }}_{{ krew_arch }} install krew"
+        chdir: "{{ krew_tmp.path }}"
+      environment:
+        KREW_ROOT: "{{ krew_root }}"
+      args:
+        creates: "{{ krew_root }}/bin/kubectl-krew"
+
+    - name: Add krew to PATH in .bashrc
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.bashrc"
+        line: 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
+        create: true
+
+    - name: Verify krew installation
+      command: "{{ krew_root }}/bin/kubectl-krew version"
+      register: krew_version
+      changed_when: false
+
+    - name: Display krew version
+      debug:
+        var: krew_version.stdout_lines

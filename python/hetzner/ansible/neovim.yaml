@@ -1,0 +1,63 @@
+---
+- name: Install Neovim 0.12.x locally on Ubuntu
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+
+  vars:
+    neovim_version: "v0.12.0"
+
+  tasks:
+    - name: Install prerequisites
+      apt:
+        name:
+          - curl
+          - tar
+          - gzip
+        state: present
+        update_cache: true
+
+    - name: Download Neovim release
+      get_url:
+        url: "https://github.com/neovim/neovim/releases/download/{{ neovim_version }}/nvim-linux-x86_64.tar.gz"
+        dest: "/tmp/nvim-linux-x86_64.tar.gz"
+        mode: "0644"
+
+    - name: Remove previous Neovim installation
+      file:
+        path: /opt/nvim
+        state: absent
+
+    - name: Create installation directory
+      file:
+        path: /opt
+        state: directory
+        mode: "0755"
+
+    - name: Extract Neovim
+      unarchive:
+        src: /tmp/nvim-linux-x86_64.tar.gz
+        dest: /opt
+        remote_src: true
+
+    - name: Create stable symlink
+      file:
+        src: /opt/nvim-linux-x86_64
+        dest: /opt/nvim
+        state: link
+
+    - name: Create executable symlink
+      file:
+        src: /opt/nvim/bin/nvim
+        dest: /usr/local/bin/nvim
+        state: link
+
+    - name: Verify installation
+      command: nvim --version
+      register: nvim_version
+      changed_when: false
+
+    - name: Display version
+      debug:
+        var: nvim_version.stdout_lines

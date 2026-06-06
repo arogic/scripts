@@ -1,5 +1,17 @@
 #cloud-config
 
+users:
+  - default
+
+  - name: tux
+    gecos: Tux
+    groups:
+      - sudo
+      - adm
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+
 package_update: true
 package_upgrade: true
 
