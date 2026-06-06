@@ -12,4 +12,18 @@ if [ ! -d "$VENV" ]; then
     "$VENV/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
 fi
 
-exec "$VENV/bin/python" "$SCRIPT_DIR/hetzner.py" "$@"
+# exec "$VENV/bin/python" "$SCRIPT_DIR/hetzner.py" "$@"
+
+OUTPUT=$("$VENV/bin/python" "$SCRIPT_DIR/hetzner.py" "$@")
+
+echo "$OUTPUT"
+
+EXPORT_LINE=$(echo "$OUTPUT" | grep '^export HETZNER_SERVER_IP=')
+
+if [ -n "$EXPORT_LINE" ]; then
+    eval "$EXPORT_LINE"
+    export HETZNER_SERVER_IP
+    echo "HETZNER_SERVER_IP=$HETZNER_SERVER_IP"
+fi
+
+# ssh-keygen -R "$IP" >/dev/null 2>&3

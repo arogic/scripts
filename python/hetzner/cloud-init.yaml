@@ -1,0 +1,14 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ansible-core
+  - git
+  - curl
+  - python3-pip
+  - python3-venv
+
+runcmd:
+  - ansible --version > /root/ansible-version.txt

@@ -56,6 +56,12 @@ Using the hetzner shell script
 ./hetzner list
 ./hetzner delete --name my-server
 
+python hetzner.py create web01 \
+  --type cx23 \
+  --image ubuntu-24.04 \
+  --location fsn1 \
+  --cloud-init cloud-init.yaml
+
 Display help:
 
 python hetzner.py --help

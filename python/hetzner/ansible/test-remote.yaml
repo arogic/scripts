@@ -1,0 +1,20 @@
+# test-remote.yml
+
+- name: Test Ansible against Hetzner VM
+  hosts: hetzner
+  gather_facts: true
+
+  tasks:
+    - name: Ping host
+      ping:
+
+    - name: Show hostname
+      debug:
+        msg: "Remote hostname is {{ ansible_hostname }}"
+
+    - name: Create test file
+      copy:
+        dest: /tmp/ansible-remote-test.txt
+        content: |
+          Ansible is working over SSH.
+          Hostname: {{ ansible_hostname }}

@@ -3,11 +3,30 @@
 import argparse
 import os
 import sys
+import subprocess
+from pathlib import Path
 
 from hcloud import Client
 from hcloud.images import Image
 from hcloud.locations import Location
 from hcloud.server_types import ServerType
+
+
+def read_cloud_init(path):
+    if not path:
+        return None
+
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def update_ssh_known_hosts(ip):
+    subprocess.run(
+        ["ssh-keygen", "-R", ip],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
 
 
 def get_client():
@@ -23,6 +42,7 @@ def create_server(args):
     client = get_client()
 
     ssh_keys = client.ssh_keys.get_all()
+    user_data = read_cloud_init(args.cloud_init)
 
     response = client.servers.create(
         name=args.name,
@@ -30,6 +50,7 @@ def create_server(args):
         image=Image(name=args.image),
         location=Location(name=args.location),
         ssh_keys=ssh_keys,
+        user_data=user_data,
         start_after_create=True,
     )
 
@@ -38,8 +59,16 @@ def create_server(args):
     print(f"Created: {server.name}")
     print(f"ID: {server.id}")
 
+    # if server.public_net.ipv4:
+    #    print(f"IPv4: {server.public_net.ipv4.ip}")
     if server.public_net.ipv4:
-        print(f"IPv4: {server.public_net.ipv4.ip}")
+        ip = server.public_net.ipv4.ip
+        update_ssh_known_hosts(ip)
+        print(f"IPv4: {ip}")
+        # Easy for shell wrapper to consume
+        print(f"export HETZNER_SERVER_IP={ip}")
+        # Optional file
+        Path("/tmp/hetzner_server_ip").write_text(ip)
 
 
 def list_servers(args):
@@ -134,6 +163,10 @@ def main():
         "--location",
         default="fsn1",
         help="Location (default: fsn1)",
+    )
+    create.add_argument(
+        "--cloud-init",
+        help="Path to a cloud-init user-data file",
     )
 
     create.set_defaults(func=create_server)
