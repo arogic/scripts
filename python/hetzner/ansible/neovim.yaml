@@ -6,7 +6,7 @@
   gather_facts: true
 
   vars:
-    neovim_version: "v0.12.0"
+    neovim_version: "v0.12.2"
 
   tasks:
     - name: Install prerequisites
@@ -20,6 +20,7 @@
 
     - name: Download Neovim release
       get_url:
+        # url: "https://github.com/neovim/neovim/releases/download/v0.12.2/nvim-linux-x86_64.tar.gz"
         url: "https://github.com/neovim/neovim/releases/download/{{ neovim_version }}/nvim-linux-x86_64.tar.gz"
         dest: "/tmp/nvim-linux-x86_64.tar.gz"
         mode: "0644"
@@ -40,6 +41,11 @@
         src: /tmp/nvim-linux-x86_64.tar.gz
         dest: /opt
         remote_src: true
+
+    - name: Remove downloaded archive
+      file:
+        path: /tmp/nvim-linux-x86_64.tar.gz
+        state: absent
 
     - name: Create stable symlink
       file:
