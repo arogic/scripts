@@ -41,7 +41,11 @@ Create an API token in the Hetzner Cloud Console:
 
 Export the token:
 
+```bash
+```
 export HCLOUD_TOKEN="your-api-token"
+```
+```
 
 To make this permanent, add it to your shell profile:
 
